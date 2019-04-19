@@ -1,33 +1,19 @@
 #include "albumoftimes.hpp"
 
-extern "C" {
-    void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-        eternalalbum thiscontract(receiver);
-
-        if ((code == N(eosio.token)) && (action == N(transfer))) {
-            execute_action(&thiscontract, &eternalalbum::transfer);
-            return;
-        }
-    
-        if (code != receiver) return;
-    
-        switch (action) { EOSIO_API(eternalalbum, (withdraw)(createalbum)(uploadpic)(displaypic)(upvotepic)(setcover)(deletepic)(deletealbum)(clearalldata)) };
-    }
-}
-
 // 响应用户充值
-void eternalalbum::transfer(const account_name& from,
-                            const account_name& to,
-                            const asset& quantity,
-                            const string& memo) {
-
+ACTION albumoftimes::transfer(const name& from,
+                              const name& to,
+                              const asset& quantity,
+                              const string& memo)
+{
+    /******
     if (from == _self) {
         return;
     }
     if (to != _self) {
         return;
     }
-    if ("eternalalbum deposit" != memo) {
+    if ("albumoftimes deposit" != memo) {
         return;
     }
     if (!quantity.is_valid()) {
@@ -50,10 +36,13 @@ void eternalalbum::transfer(const account_name& from,
     _accounts.modify( itr, 0, [&]( auto& acnt ) {
        acnt.quantity += quantity;
     });
+    ******/
 }
 
 // 用户提现
-void eternalalbum::withdraw( const account_name to, const asset& quantity ) {
+ACTION albumoftimes::withdraw( const name to, const asset& quantity )
+{
+    /******
     require_auth( to );
 
     if (!quantity.is_valid()) {
@@ -77,13 +66,15 @@ void eternalalbum::withdraw( const account_name to, const asset& quantity ) {
     action(
         permission_level{ _self, N(active) },
         N(eosio.token), N(transfer),
-        std::make_tuple(_self, to, quantity, std::string("eternalalbum withdraw"))
+        std::make_tuple(_self, to, quantity, std::string("albumoftimes withdraw"))
     ).send();
+    ******/
 }
 
 // 创建相册
-void eternalalbum::createalbum(const account_name& owner, const string& name)
+ACTION albumoftimes::createalbum(const name& owner, const string& name)
 {
+    /******
     require_auth( owner );
     eosio_assert( name.length() <= NAME_MAX_LEN, "name is too long" );
 
@@ -102,12 +93,14 @@ void eternalalbum::createalbum(const account_name& owner, const string& name)
         album.pay                      = PAY_FOR_ALBUM;
         album.cover_thumb_pic_ipfs_sum = string("default");
     });
+    ******/
 }
 
 // 上传图片
-void eternalalbum::uploadpic(const account_name& owner, const uint64_t& album_id, const string& name,
-                             const string& md5_sum, const string& ipfs_sum, const string& thumb_ipfs_sum)
+ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, const string& name,
+                               const string& md5_sum, const string& ipfs_sum, const string& thumb_ipfs_sum)
 {
+    /******
     require_auth( owner );
     eosio_assert( name.length()           <= NAME_MAX_LEN, "name is too long" );
     eosio_assert( md5_sum.length()        == MD5_SUM_LEN,  "wrong md5_sum" );
@@ -138,11 +131,13 @@ void eternalalbum::uploadpic(const account_name& owner, const uint64_t& album_id
         pic.display_fee              = 0;
         pic.upvote_num               = 0;
     });
+    ******/
 }
 
 // 设置图片展示到公共区
-void eternalalbum::displaypic(const account_name& owner, const uint64_t& id, const asset& fee)
+ACTION albumoftimes::displaypic(const name& owner, const uint64_t& id, const asset& fee)
 {
+    /******
     require_auth( owner );
 
     auto itr_pic = _pics.find( id );
@@ -170,11 +165,13 @@ void eternalalbum::displaypic(const account_name& owner, const uint64_t& id, con
     _pics.modify( itr_pic, 0, [&]( auto& pic ) {
         pic.display_fee += fee.amount;
     });
+    ******/
 }
 
 // 为图片点赞
-void eternalalbum::upvotepic(const account_name& user, const uint64_t& id)
+ACTION albumoftimes::upvotepic(const name& user, const uint64_t& id)
 {
+    /******
     require_auth( user );
 
     auto itr_pic = _pics.find( id );
@@ -184,11 +181,13 @@ void eternalalbum::upvotepic(const account_name& user, const uint64_t& id)
     _pics.modify( itr_pic, 0, [&]( auto& pic ) {
         pic.upvote_num += 1;
     });
+    ******/
 }
 
 // 设置相册的封面图片
-void eternalalbum::setcover(const account_name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_sum)
+ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_sum)
 {
+    /******
     require_auth( owner );
     eosio_assert( cover_thumb_pic_ipfs_sum.length() == IPFS_SUM_LEN, "wrong cover_thumb_pic_ipfs_sum" );
 
@@ -199,11 +198,13 @@ void eternalalbum::setcover(const account_name& owner, const uint64_t& album_id,
     _albums.modify( itr_album, 0, [&]( auto& album ) {
         album.cover_thumb_pic_ipfs_sum = cover_thumb_pic_ipfs_sum;
     });
+    ******/
 }
 
 // 删除图片（只删除EOS中的数据，IPFS中的图片依然存在）
-void eternalalbum::deletepic(const account_name& owner, const uint64_t& id)
+ACTION albumoftimes::deletepic(const name& owner, const uint64_t& id)
 {
+    /******
     require_auth( owner );
 
     auto itr_pic = _pics.find( id );
@@ -211,11 +212,13 @@ void eternalalbum::deletepic(const account_name& owner, const uint64_t& id)
     eosio_assert(itr_pic->owner == owner, "this pic is not belong to this owner");
 
     _pics.erase(itr_pic);
+    ******/
 }
 
 // 删除相册，如果相册中有图片，则不能删除，只能删除空相册
-void eternalalbum::deletealbum(const account_name& owner, const uint64_t& id)
+ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& id)
 {
+    /******
     require_auth( owner );
 
     auto itr_album = _albums.find( id );
@@ -231,11 +234,13 @@ void eternalalbum::deletealbum(const account_name& owner, const uint64_t& id)
     eosio_assert(has_pic_in_album == false, "album is not empty");
 
     _albums.erase(itr_album);
+    ******/
 }
 
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
-void eternalalbum::clearalldata()
+ACTION albumoftimes::clearalldata()
 {
+    /******
     require_auth( _self );
     std::vector<uint64_t> keysForDeletion;
     print("\nclear all data.\n");
@@ -272,4 +277,5 @@ void eternalalbum::clearalldata()
             _pics.erase(itr);
         }
     }
+    ******/
 }
