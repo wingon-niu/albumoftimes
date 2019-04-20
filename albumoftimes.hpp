@@ -32,6 +32,7 @@ using std::string;
 extern "C" { \
    [[eosio::wasm_entry]] \
    void apply( uint64_t receiver, uint64_t code, uint64_t action ) { \
+      /* 此处对原本的 EOSIO_DISPATCH 宏代码进行了修改，以防收到假币。 */ \
       if( (code == receiver && action != name("transfer").value) || (code == name("eosio.token").value && action == name("transfer").value) ) { \
          switch( action ) { \
             EOSIO_DISPATCH_HELPER( TYPE, MEMBERS ) \
@@ -41,7 +42,7 @@ extern "C" { \
    } \
 } \
 
-#define  MAIN_SYMBOL    S(4, SYS)
+#define  MAIN_SYMBOL    symbol(symbol_code("SYS"), 4)
 
 #define  PAY_FOR_ALBUM   5*10000   // 每创建一个相册收费  5 eosc
 #define  PAY_FOR_PIC    10*10000   // 每张图片存储收费   10 eosc
