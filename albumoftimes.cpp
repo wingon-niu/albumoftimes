@@ -1,10 +1,9 @@
 #include "albumoftimes.hpp"
+#include "my-dispatcher.hpp"
+#include "my-defines.hpp"
 
 // 响应用户充值
-ACTION albumoftimes::transfer(const name& from,
-                              const name& to,
-                              const asset& quantity,
-                              const string& memo)
+ACTION albumoftimes::transfer(const name& from, const name& to, const asset& quantity, const string& memo)
 {
     if (from == _self) {
         return;
@@ -59,6 +58,8 @@ ACTION albumoftimes::withdraw( const name to, const asset& quantity )
         eosio::check( acnt.quantity >= quantity, "insufficient balance" );
         acnt.quantity -= quantity;
     });
+    
+    // TODO: 如果余额为0，则删除这条记录
 
     action(
         permission_level{ _self, "active"_n },
@@ -77,23 +78,25 @@ ACTION albumoftimes::createalbum(const name& owner, const string& name)
     eosio::check(itr != _accounts.end(), "unknown account");
 
     _accounts.modify( itr, _self, [&]( auto& acnt ) {
-        eosio::check( acnt.quantity.amount >= PAY_FOR_ALBUM, "insufficient balance" );
-        acnt.quantity.amount -= PAY_FOR_ALBUM;
+        eosio::check( acnt.quantity >= PAY_FOR_ALBUM, "insufficient balance" );
+        acnt.quantity -= PAY_FOR_ALBUM;
     });
+    
+    // TODO: 如果余额为0，则删除这条记录
 
     _albums.emplace(_self, [&](auto& album){
         album.owner                    = owner;
-        album.id                       = _albums.available_primary_key();
+        album.album_id                 = _albums.available_primary_key();
         album.name                     = name;
-        album.pay                      = PAY_FOR_ALBUM;
-        album.cover_thumb_pic_ipfs_sum = string("default");
+        album.album_pay                = PAY_FOR_ALBUM;
+        album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
     });
 }
 
 // 上传图片
-ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, const string& name,
+ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, const string& name, const string& detail,
                                const string& md5_sum, const string& ipfs_sum, const string& thumb_ipfs_sum)
-{
+{/*
     require_auth( owner );
     eosio::check( name.length()           <= NAME_MAX_LEN, "name is too long" );
     eosio::check( md5_sum.length()        == MD5_SUM_LEN,  "wrong md5_sum" );
@@ -124,11 +127,11 @@ ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, cons
         pic.display_fee              = 0;
         pic.upvote_num               = 0;
     });
-}
+*/}
 
-// 设置图片展示到公共区
-ACTION albumoftimes::displaypic(const name& owner, const uint64_t& id, const asset& fee)
-{
+// 为公共相册中的图片支付排序靠前的费用
+ACTION albumoftimes::paysortfee(const name& owner, const uint64_t& pic_id, const asset& sortfee)
+{/*
     require_auth( owner );
 
     auto itr_pic = _pics.find( id );
@@ -156,11 +159,11 @@ ACTION albumoftimes::displaypic(const name& owner, const uint64_t& id, const ass
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
         pic.display_fee += fee.amount;
     });
-}
+*/}
 
 // 为图片点赞
-ACTION albumoftimes::upvotepic(const name& user, const uint64_t& id)
-{
+ACTION albumoftimes::upvotepic(const name& user, const uint64_t& pic_id)
+{/*
     require_auth( user );
 
     auto itr_pic = _pics.find( id );
@@ -170,11 +173,11 @@ ACTION albumoftimes::upvotepic(const name& user, const uint64_t& id)
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
         pic.upvote_num += 1;
     });
-}
+*/}
 
 // 设置相册的封面图片
 ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_sum)
-{
+{/*
     require_auth( owner );
     eosio::check( cover_thumb_pic_ipfs_sum.length() == IPFS_SUM_LEN, "wrong cover_thumb_pic_ipfs_sum" );
 
@@ -185,11 +188,11 @@ ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const
     _albums.modify( itr_album, _self, [&]( auto& album ) {
         album.cover_thumb_pic_ipfs_sum = cover_thumb_pic_ipfs_sum;
     });
-}
+*/}
 
 // 删除图片（只删除EOS中的数据，IPFS中的图片依然存在）
-ACTION albumoftimes::deletepic(const name& owner, const uint64_t& id)
-{
+ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
+{/*
     require_auth( owner );
 
     auto itr_pic = _pics.find( id );
@@ -197,11 +200,11 @@ ACTION albumoftimes::deletepic(const name& owner, const uint64_t& id)
     eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
 
     _pics.erase(itr_pic);
-}
+*/}
 
 // 删除相册，如果相册中有图片，则不能删除，只能删除空相册
-ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& id)
-{
+ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& album_id)
+{/*
     require_auth( owner );
 
     auto itr_album = _albums.find( id );
@@ -217,11 +220,11 @@ ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& id)
     eosio::check(has_pic_in_album == false, "album is not empty");
 
     _albums.erase(itr_album);
-}
+*/}
 
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
 ACTION albumoftimes::clearalldata()
-{
+{/*
     require_auth( _self );
     std::vector<uint64_t> keysForDeletion;
     print("\nclear all data.\n");
@@ -258,4 +261,4 @@ ACTION albumoftimes::clearalldata()
             _pics.erase(itr);
         }
     }
-}
+*/}
