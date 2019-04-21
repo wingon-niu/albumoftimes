@@ -96,12 +96,13 @@ ACTION albumoftimes::createalbum(const name& owner, const string& name)
 // 上传图片
 ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, const string& name, const string& detail,
                                const string& md5_sum, const string& ipfs_sum, const string& thumb_ipfs_sum)
-{/*
+{
     require_auth( owner );
-    eosio::check( name.length()           <= NAME_MAX_LEN, "name is too long" );
-    eosio::check( md5_sum.length()        == MD5_SUM_LEN,  "wrong md5_sum" );
-    eosio::check( ipfs_sum.length()       == IPFS_SUM_LEN, "wrong ipfs_sum" );
-    eosio::check( thumb_ipfs_sum.length() == IPFS_SUM_LEN, "wrong thumb_ipfs_sum" );
+    eosio::check( name.length()           <= NAME_MAX_LEN,   "name is too long" );
+    eosio::check( detail.length()         <= DETAIL_MAX_LEN, "detail is too long" );
+    eosio::check( md5_sum.length()        == MD5_SUM_LEN,    "wrong md5_sum" );
+    eosio::check( ipfs_sum.length()       == IPFS_SUM_LEN,   "wrong ipfs_sum" );
+    eosio::check( thumb_ipfs_sum.length() == IPFS_SUM_LEN,   "wrong thumb_ipfs_sum" );
 
     auto itr_album = _albums.find( album_id );
     eosio::check(itr_album != _albums.end(), "unknown album_id");
@@ -111,40 +112,45 @@ ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, cons
     eosio::check(itr_acnt != _accounts.end(), "unknown account");
 
     _accounts.modify( itr_acnt, _self, [&]( auto& acnt ) {
-        eosio::check( acnt.quantity.amount >= PAY_FOR_PIC, "insufficient balance" );
-        acnt.quantity.amount -= PAY_FOR_PIC;
+        eosio::check( acnt.quantity >= PAY_FOR_PIC, "insufficient balance" );
+        acnt.quantity -= PAY_FOR_PIC;
     });
+
+    // TODO: 如果余额为0，则删除这条记录
 
     _pics.emplace(_self, [&](auto& pic){
         pic.owner                    = owner;
         pic.album_id                 = album_id;
-        pic.id                       = _pics.available_primary_key();
+        pic.pic_id                   = _pics.available_primary_key();
         pic.name                     = name;
+        pic.detail                   = detail;
         pic.md5_sum                  = md5_sum;
         pic.ipfs_sum                 = ipfs_sum;
         pic.thumb_ipfs_sum           = thumb_ipfs_sum;
-        pic.pay                      = PAY_FOR_PIC;
-        pic.display_fee              = 0;
+        pic.pic_pay                  = PAY_FOR_PIC;
+        pic.public_album_id          = 0;
+        pic.sort_fee                 = ZERO_FEE;
         pic.upvote_num               = 0;
+        pic.upload_time              = current_time_point().sec_since_epoch();
     });
-*/}
+}
 
 // 为公共相册中的图片支付排序靠前的费用
 ACTION albumoftimes::paysortfee(const name& owner, const uint64_t& pic_id, const asset& sortfee)
-{/*
+{
     require_auth( owner );
 
-    auto itr_pic = _pics.find( id );
+    auto itr_pic = _pics.find( pic_id );
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
     eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
 
-    if ( !fee.is_valid() || !fee.is_amount_within_range() ) {
+    if ( !sortfee.is_valid() || !sortfee.is_amount_within_range() ) {
         return;
     }
-    if ( !fee.symbol.is_valid() || fee.symbol != MAIN_SYMBOL ) {
+    if ( !sortfee.symbol.is_valid() || sortfee.symbol != MAIN_SYMBOL ) {
         return;
     }
-    if (fee.amount <= 0) {
+    if (sortfee.amount <= 0) {
         return;
     }
 
@@ -152,32 +158,38 @@ ACTION albumoftimes::paysortfee(const name& owner, const uint64_t& pic_id, const
     eosio::check(itr_acnt != _accounts.end(), "unknown account");
 
     _accounts.modify( itr_acnt, _self, [&]( auto& acnt ) {
-        eosio::check( acnt.quantity >= fee, "insufficient balance" );
-        acnt.quantity -= fee;
+        eosio::check( acnt.quantity >= sortfee, "insufficient balance" );
+        acnt.quantity -= sortfee;
     });
+    
+    // TODO: 如果余额为0，则删除这条记录
 
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
-        pic.display_fee += fee.amount;
+        pic.sort_fee += sortfee;
     });
-*/}
+
+    // TODO: 如果这个图片在一个公共相册里面，则可能需要更新这个公共相册的封面，由排序最前的图片当封面。
+
+    //
+}
 
 // 为图片点赞
 ACTION albumoftimes::upvotepic(const name& user, const uint64_t& pic_id)
-{/*
+{
     require_auth( user );
 
-    auto itr_pic = _pics.find( id );
+    auto itr_pic = _pics.find( pic_id );
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
     eosio::check(itr_pic->owner != user, "can not upvote pic by self");
 
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
-        pic.upvote_num += 1;
+        pic.upvote_num += 1;  // 也许很多年以后，这个字段会溢出，会有这一天吗？！  Maybe overflow after many many years, will there be this day?!
     });
-*/}
+}
 
 // 设置相册的封面图片
 ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_sum)
-{/*
+{
     require_auth( owner );
     eosio::check( cover_thumb_pic_ipfs_sum.length() == IPFS_SUM_LEN, "wrong cover_thumb_pic_ipfs_sum" );
 
@@ -188,43 +200,51 @@ ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const
     _albums.modify( itr_album, _self, [&]( auto& album ) {
         album.cover_thumb_pic_ipfs_sum = cover_thumb_pic_ipfs_sum;
     });
-*/}
+}
 
 // 删除图片（只删除EOS中的数据，IPFS中的图片依然存在）
 ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
-{/*
+{
     require_auth( owner );
 
-    auto itr_pic = _pics.find( id );
+    auto itr_pic = _pics.find( pic_id );
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
     eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
 
+    // TODO: 如果这个图片是所属个人的某个相册的封面，则需要将这个相册的封面改回系统默认封面
+
+    //
+
     _pics.erase(itr_pic);
-*/}
+
+    // TODO: 如果这个图片是所属公共相册的封面，则需要更新这个公共相册的封面，由新的排序最前的图片当封面。
+
+    //
+}
 
 // 删除相册，如果相册中有图片，则不能删除，只能删除空相册
 ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& album_id)
-{/*
+{
     require_auth( owner );
 
-    auto itr_album = _albums.find( id );
+    auto itr_album = _albums.find( album_id );
     eosio::check(itr_album != _albums.end(), "unknown album id");
     eosio::check(itr_album->owner == owner, "this album is not belong to this owner");
 
     auto album_index = _pics.get_index<name("byalbumid")>();
-    auto itr = album_index.lower_bound(id);
+    auto itr = album_index.lower_bound(album_id);
     bool has_pic_in_album = false;
-    if (itr != album_index.end() && itr->album_id == id) {
+    if (itr != album_index.end() && itr->album_id == album_id) {
         has_pic_in_album = true;
     }
     eosio::check(has_pic_in_album == false, "album is not empty");
 
     _albums.erase(itr_album);
-*/}
+}
 
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
 ACTION albumoftimes::clearalldata()
-{/*
+{
     require_auth( _self );
     std::vector<uint64_t> keysForDeletion;
     print("\nclear all data.\n");
@@ -242,7 +262,7 @@ ACTION albumoftimes::clearalldata()
 
     keysForDeletion.clear();
     for (auto& item : _albums) {
-        keysForDeletion.push_back(item.id);
+        keysForDeletion.push_back(item.album_id);
     }
     for (uint64_t key : keysForDeletion) {
         auto itr = _albums.find(key);
@@ -253,7 +273,7 @@ ACTION albumoftimes::clearalldata()
 
     keysForDeletion.clear();
     for (auto& item : _pics) {
-        keysForDeletion.push_back(item.id);
+        keysForDeletion.push_back(item.pic_id);
     }
     for (uint64_t key : keysForDeletion) {
         auto itr = _pics.find(key);
@@ -261,4 +281,4 @@ ACTION albumoftimes::clearalldata()
             _pics.erase(itr);
         }
     }
-*/}
+}
