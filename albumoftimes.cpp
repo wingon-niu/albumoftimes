@@ -270,16 +270,72 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
 // 创建公共相册
 ACTION albumoftimes::makepubalbum(const string& name)
 {
+    require_auth( _self );
+    eosio::check( name.length() <= NAME_MAX_LEN, "name is too long" );
+
+    _pub_albums.emplace(_self, [&](auto& pub_album){
+        pub_album.owner                    = _self;
+        pub_album.pub_album_id             = _pub_albums.available_primary_key();
+        pub_album.name                     = name;
+        pub_album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+        pub_album.create_time              = current_time_point().sec_since_epoch();
+    });
 }
 
 // 将图片加入某个公共相册
 ACTION albumoftimes::joinpubalbum(const name& owner, const uint64_t& pic_id, const uint64_t& pub_album_id)
 {
+    require_auth( owner );
+
+    auto itr_pic = _pics.find( pic_id );
+    eosio::check(itr_pic != _pics.end(), "unknown pic id");
+    eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
+
+    auto itr_pub_album = _pub_albums.find( pub_album_id );
+    eosio::check(itr_pub_album != _pub_albums.end(), "unknown pub album id");
+
+    uint64_t old_pub_album_id = itr_pic->public_album_id;
+    if ( old_pub_album_id == pub_album_id ) {
+        return;
+    }
+
+    _pics.modify( itr_pic, _self, [&]( auto& pic ) {
+        pic.public_album_id = pub_album_id;
+    });
+
+    // TODO: 如果这个图片是它以前所属公共相册的封面，则需要更新它以前所属公共相册的封面。
+    if ( old_pub_album_id > 0 ) {
+        //
+    }
+
+    // TODO: 如果这个图片以前曾经支付过在公共相册中的排序费用，则它可能成为新的所属公共相册的封面。
+    if ( itr_pic->sort_fee.amount > 0 ) {
+        //
+    }
 }
 
 // 将图片移出所属公共相册
 ACTION albumoftimes::outpubalbum(const name& owner, const uint64_t& pic_id)
 {
+    require_auth( owner );
+
+    auto itr_pic = _pics.find( pic_id );
+    eosio::check(itr_pic != _pics.end(), "unknown pic id");
+    eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
+
+    uint64_t old_pub_album_id = itr_pic->public_album_id;
+    if ( old_pub_album_id == 0 ) {
+        return;
+    }
+
+    _pics.modify( itr_pic, _self, [&]( auto& pic ) {
+        pic.public_album_id = 0;
+    });
+
+    // TODO: 如果这个图片是它以前所属公共相册的封面，则需要更新它以前所属公共相册的封面。
+    if ( old_pub_album_id > 0 ) {
+        //
+    }
 }
 
 // 将图片移动到另一个相册（图片可以在个人相册之间移动）
