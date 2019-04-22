@@ -30,33 +30,30 @@ public:
     // 用户提现
     ACTION withdraw( const name to, const asset& quantity );
 
-    // 创建相册
+    // 创建公共相册
+    ACTION makepubalbum(const string& name_cn, const string& name_en);
+
+    // 修改公共相册的名字
+    ACTION rnpubalbum(const uint64_t& pub_album_id, const string& new_name_cn, const string& new_name_en);
+
+    // 创建个人相册
     ACTION createalbum(const name& owner, const string& name);
+
+    // 修改个人相册的名字
+    ACTION renamealbum(const name& owner, const uint64_t& album_id, const string& new_name);
 
     // 上传图片
     ACTION uploadpic(const name& owner, const uint64_t& album_id, const string& name, const string& detail,
                      const string& md5_sum, const string& ipfs_sum, const string& thumb_ipfs_sum);
 
-    // 为公共相册中的图片支付排序靠前的费用
-    ACTION paysortfee(const name& owner, const uint64_t& pic_id, const asset& sortfee);
+    // 修改图片的名字和描述
+    ACTION modifypicnd(const name& owner, const uint64_t& pic_id, const string& new_name, const string& new_detail);
 
-    // 为图片点赞
-    ACTION upvotepic(const name& user, const uint64_t& pic_id);
-
-    // 设置相册的封面图片
+    // 设置个人相册的封面图片
     ACTION setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_sum);
 
-    // 删除图片（只删除EOS中的数据，IPFS中的图片依然存在）
-    ACTION deletepic(const name& owner, const uint64_t& pic_id);
-
-    // 删除相册，如果相册中有图片，则不能删除，只能删除空相册
-    ACTION deletealbum(const name& owner, const uint64_t& album_id);
-
-    // 监管删除违规图片
-    ACTION rmillegalpic(const uint64_t& pic_id);
-
-    // 创建公共相册
-    ACTION makepubalbum(const string& name_cn, const string& name_en);
+    // 将图片移动到另一个相册（图片可以在个人相册之间移动）
+    ACTION movetoalbum(const name& owner, const uint64_t& pic_id, const uint64_t& dst_album_id);
 
     // 将图片加入某个公共相册
     ACTION joinpubalbum(const name& owner, const uint64_t& pic_id, const uint64_t& pub_album_id);
@@ -64,17 +61,20 @@ public:
     // 将图片移出所属公共相册
     ACTION outpubalbum(const name& owner, const uint64_t& pic_id);
 
-    // 将图片移动到另一个相册（图片可以在个人相册之间移动）
-    ACTION movetoalbum(const name& owner, const uint64_t& pic_id, const uint64_t& dst_album_id);
+    // 为公共相册中的图片支付排序靠前的费用
+    ACTION paysortfee(const name& owner, const uint64_t& pic_id, const asset& sortfee);
 
-    // 修改个人相册的名字
-    ACTION renamealbum(const name& owner, const uint64_t& album_id, const string& new_name);
+    // 为图片点赞
+    ACTION upvotepic(const name& user, const uint64_t& pic_id);
 
-    // 修改图片的名字和描述
-    ACTION modifypicnd(const name& owner, const uint64_t& pic_id, const string& new_name, const string& new_detail);
+    // 删除图片（只删除EOS中的数据，IPFS中的图片依然存在）
+    ACTION deletepic(const name& owner, const uint64_t& pic_id);
 
-    // 修改公共相册的名字
-    ACTION rnpubalbum(const uint64_t& pub_album_id, const string& new_name_cn, const string& new_name_en);
+    // 监管删除违规图片
+    ACTION rmillegalpic(const uint64_t& pic_id);
+
+    // 删除个人相册，如果相册中有图片，则不能删除，只能删除空相册
+    ACTION deletealbum(const name& owner, const uint64_t& album_id);
 
     // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
     ACTION clearalldata();
@@ -95,6 +95,7 @@ private:
         asset        album_pay;
         string       cover_thumb_pic_ipfs_sum;
         uint32_t     create_time;
+        uint64_t     pic_num;
 
         uint64_t primary_key() const { return album_id; }
         uint64_t by_owner()    const { return owner.value; }
@@ -144,6 +145,7 @@ private:
         string       name_en;
         string       cover_thumb_pic_ipfs_sum;
         uint32_t     create_time;
+        uint64_t     pic_num;
 
         uint64_t primary_key() const { return pub_album_id; }
         uint64_t by_owner()    const { return owner.value; }

@@ -30,4 +30,4 @@ extern "C" { \
    } \
 } \
 
-EOSIO_DISPATCH_EX(albumoftimes, (transfer)(withdraw)(createalbum)(uploadpic)(paysortfee)(upvotepic)(setcover)(deletepic)(deletealbum)(rmillegalpic)(makepubalbum)(joinpubalbum)(outpubalbum)(movetoalbum)(renamealbum)(modifypicnd)(rnpubalbum)(clearalldata))
+EOSIO_DISPATCH_EX(albumoftimes, (transfer)(withdraw)(makepubalbum)(rnpubalbum)(createalbum)(renamealbum)(uploadpic)(modifypicnd)(setcover)(movetoalbum)(joinpubalbum)(outpubalbum)(paysortfee)(upvotepic)(deletepic)(rmillegalpic)(deletealbum)(clearalldata))
