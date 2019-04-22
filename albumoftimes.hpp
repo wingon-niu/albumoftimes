@@ -19,9 +19,10 @@ public:
     using contract::contract;
 
     albumoftimes(name self, name first_receiver, datastream<const char*> ds) : contract(self, first_receiver, ds),
-          _accounts(get_self(), get_self().value),
-          _albums  (get_self(), get_self().value),
-          _pics    (get_self(), get_self().value){};
+          _accounts    (get_self(), get_self().value),
+          _pub_albums  (get_self(), get_self().value),
+          _albums      (get_self(), get_self().value),
+          _pics        (get_self(), get_self().value){};
 
     // 响应用户充值
     ACTION transfer(const name& from, const name& to, const asset& quantity, const string& memo);
@@ -53,6 +54,9 @@ public:
 
     // 监管删除违规图片
     ACTION rmillegalpic(const uint64_t& pic_id);
+
+    // 创建公共相册
+    ACTION makepubalbum(const string& name);
 
     // 将图片加入某个公共相册
     ACTION joinpubalbum(const name& owner, const uint64_t& pic_id, const uint64_t& pub_album_id);
@@ -133,7 +137,23 @@ private:
         indexed_by< "bypubsortfee"_n, const_mem_fun<st_pic, uint64_t, &st_pic::by_pub_album_sort_fee> >
     > tb_pics;
 
-    tb_accounts _accounts;
-    tb_albums   _albums;
-    tb_pics     _pics;
+    TABLE st_pub_album {
+        name         owner;
+        uint64_t     pub_album_id;
+        string       name;
+        string       cover_thumb_pic_ipfs_sum;
+        uint32_t     create_time;
+
+        uint64_t primary_key() const { return pub_album_id; }
+        uint64_t by_owner()    const { return owner.value; }
+    };
+    typedef eosio::multi_index<
+        "pubalbums"_n, st_pub_album,
+        indexed_by< "byowner"_n, const_mem_fun<st_pub_album, uint64_t, &st_pub_album::by_owner> >
+    > tb_pub_albums;
+
+    tb_accounts     _accounts;
+    tb_pub_albums   _pub_albums;
+    tb_albums       _albums;
+    tb_pics         _pics;
 };

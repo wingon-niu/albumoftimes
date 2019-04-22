@@ -248,6 +248,11 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
 {
 }
 
+// 创建公共相册
+ACTION albumoftimes::makepubalbum(const string& name)
+{
+}
+
 // 将图片加入某个公共相册
 ACTION albumoftimes::joinpubalbum(const name& owner, const uint64_t& pic_id, const uint64_t& pub_album_id)
 {
