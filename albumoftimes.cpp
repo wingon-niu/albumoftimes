@@ -246,6 +246,25 @@ ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& album_id)
 // 监管删除违规图片
 ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
 {
+    require_auth( REGULATOR_ACCOUNT_NAME );
+
+    auto itr_pic = _pics.find( pic_id );
+    eosio::check(itr_pic != _pics.end(), "unknown pic id");
+        
+    // 检查是否超出可以删除的时间期限
+    if ( current_time_point().sec_since_epoch() - itr_pic->upload_time > REGULATOR_DELETE_TIME_LIMIT_SECS ) {
+        return;
+    }
+
+    // TODO: 如果这个图片是所属个人的某个相册的封面，则需要将这个相册的封面改回系统默认封面
+
+    //
+
+    _pics.erase(itr_pic);
+
+    // TODO: 如果这个图片是所属公共相册的封面，则需要更新这个公共相册的封面，由新的排序最前的图片当封面。
+
+    //
 }
 
 // 创建公共相册
