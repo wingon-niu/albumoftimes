@@ -56,7 +56,7 @@ public:
     ACTION rmillegalpic(const uint64_t& pic_id);
 
     // 创建公共相册
-    ACTION makepubalbum(const string& name);
+    ACTION makepubalbum(const string& name_cn, const string& name_en);
 
     // 将图片加入某个公共相册
     ACTION joinpubalbum(const name& owner, const uint64_t& pic_id, const uint64_t& pub_album_id);
@@ -74,7 +74,7 @@ public:
     ACTION modifypicnd(const name& owner, const uint64_t& pic_id, const string& new_name, const string& new_detail);
 
     // 修改公共相册的名字
-    ACTION rnpubalbum(const uint64_t& pub_album_id, const string& new_name);
+    ACTION rnpubalbum(const uint64_t& pub_album_id, const string& new_name_cn, const string& new_name_en);
 
     // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
     ACTION clearalldata();
@@ -140,7 +140,8 @@ private:
     TABLE st_pub_album {
         name         owner;
         uint64_t     pub_album_id;
-        string       name;
+        string       name_cn;
+        string       name_en;
         string       cover_thumb_pic_ipfs_sum;
         uint32_t     create_time;
 

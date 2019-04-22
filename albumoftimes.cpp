@@ -268,15 +268,17 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
 }
 
 // 创建公共相册
-ACTION albumoftimes::makepubalbum(const string& name)
+ACTION albumoftimes::makepubalbum(const string& name_cn, const string& name_en)
 {
     require_auth( _self );
-    eosio::check( name.length() <= NAME_MAX_LEN, "name is too long" );
+    eosio::check( name_cn.length() <= NAME_MAX_LEN, "name_cn is too long" );
+    eosio::check( name_en.length() <= NAME_MAX_LEN, "name_en is too long" );
 
     _pub_albums.emplace(_self, [&](auto& pub_album){
         pub_album.owner                    = _self;
         pub_album.pub_album_id             = _pub_albums.available_primary_key();
-        pub_album.name                     = name;
+        pub_album.name_cn                  = name_cn;
+        pub_album.name_en                  = name_en;
         pub_album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
         pub_album.create_time              = current_time_point().sec_since_epoch();
     });
@@ -398,16 +400,18 @@ ACTION albumoftimes::modifypicnd(const name& owner, const uint64_t& pic_id, cons
 }
 
 // 修改公共相册的名字
-ACTION albumoftimes::rnpubalbum(const uint64_t& pub_album_id, const string& new_name)
+ACTION albumoftimes::rnpubalbum(const uint64_t& pub_album_id, const string& new_name_cn, const string& new_name_en)
 {
     require_auth( _self );
-    eosio::check( new_name.length() <= NAME_MAX_LEN, "new_name is too long" );
+    eosio::check( new_name_cn.length() <= NAME_MAX_LEN, "new_name_cn is too long" );
+    eosio::check( new_name_en.length() <= NAME_MAX_LEN, "new_name_en is too long" );
 
     auto itr_pub_album = _pub_albums.find( pub_album_id );
     eosio::check(itr_pub_album != _pub_albums.end(), "unknown pub_album_id");
 
     _pub_albums.modify( itr_pub_album, _self, [&]( auto& pub_album ) {
-        pub_album.name = new_name;
+        pub_album.name_cn = new_name_cn;
+        pub_album.name_en = new_name_en;
     });
 }
 
