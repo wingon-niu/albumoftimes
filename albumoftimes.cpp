@@ -162,7 +162,7 @@ ACTION albumoftimes::paysortfee(const name& owner, const uint64_t& pic_id, const
         eosio::check( acnt.quantity >= sortfee, "insufficient balance" );
         acnt.quantity -= sortfee;
     });
-    
+
     // TODO: 如果余额为0，则删除这条记录
 
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
@@ -341,21 +341,74 @@ ACTION albumoftimes::outpubalbum(const name& owner, const uint64_t& pic_id)
 // 将图片移动到另一个相册（图片可以在个人相册之间移动）
 ACTION albumoftimes::movetoalbum(const name& owner, const uint64_t& pic_id, const uint64_t& dst_album_id)
 {
+    require_auth( owner );
+
+    auto itr_pic = _pics.find( pic_id );
+    eosio::check(itr_pic != _pics.end(), "unknown pic id");
+    eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
+
+    auto itr_album = _albums.find( dst_album_id );
+    eosio::check(itr_album != _albums.end(), "unknown dst album id");
+
+    uint64_t old_album_id = itr_pic->album_id;
+    if ( old_album_id == dst_album_id ) {
+        return;
+    }
+
+    _pics.modify( itr_pic, _self, [&]( auto& pic ) {
+        pic.album_id = dst_album_id;
+    });
+
+    // TODO: 如果这个图片是它以前所属相册的封面，则需要更新它以前所属相册的封面为系统默认封面。
+    if ( old_album_id > 0 ) {
+        //
+    }
 }
 
 // 修改个人相册的名字
 ACTION albumoftimes::renamealbum(const name& owner, const uint64_t& album_id, const string& new_name)
 {
+    require_auth( owner );
+    eosio::check( new_name.length() <= NAME_MAX_LEN, "new_name is too long" );
+
+    auto itr_album = _albums.find( album_id );
+    eosio::check(itr_album != _albums.end(), "unknown album id");
+    eosio::check(itr_album->owner == owner, "this album is not belong to this owner");
+
+    _albums.modify( itr_album, _self, [&]( auto& album ) {
+        album.name = new_name;
+    });
 }
 
 // 修改图片的名字和描述
 ACTION albumoftimes::modifypicnd(const name& owner, const uint64_t& pic_id, const string& new_name, const string& new_detail)
 {
+    require_auth( owner );
+    eosio::check( new_name.length()     <= NAME_MAX_LEN,   "new_name is too long" );
+    eosio::check( new_detail.length()   <= DETAIL_MAX_LEN, "new_detail is too long" );
+
+    auto itr_pic = _pics.find( pic_id );
+    eosio::check(itr_pic != _pics.end(), "unknown pic id");
+    eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
+
+    _pics.modify( itr_pic, _self, [&]( auto& pic ) {
+        pic.name   = new_name;
+        pic.detail = new_detail;
+    });
 }
 
 // 修改公共相册的名字
 ACTION albumoftimes::rnpubalbum(const uint64_t& pub_album_id, const string& new_name)
 {
+    require_auth( _self );
+    eosio::check( new_name.length() <= NAME_MAX_LEN, "new_name is too long" );
+
+    auto itr_pub_album = _pub_albums.find( pub_album_id );
+    eosio::check(itr_pub_album != _pub_albums.end(), "unknown pub_album_id");
+
+    _pub_albums.modify( itr_pub_album, _self, [&]( auto& pub_album ) {
+        pub_album.name = new_name;
+    });
 }
 
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
