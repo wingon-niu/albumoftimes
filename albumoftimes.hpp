@@ -51,6 +51,27 @@ public:
     // 删除相册，如果相册中有图片，则不能删除，只能删除空相册
     ACTION deletealbum(const name& owner, const uint64_t& album_id);
 
+    // 监管删除违规图片
+    ACTION rmillegalpic(const uint64_t& pic_id);
+
+    // 将图片加入某个公共相册
+    ACTION joinpubalbum(const name& owner, const uint64_t& pic_id, const uint64_t& pub_album_id);
+
+    // 将图片移出所属公共相册
+    ACTION outpubalbum(const name& owner, const uint64_t& pic_id);
+
+    // 将图片移动到另一个相册（图片可以在个人相册之间移动）
+    ACTION movetoalbum(const name& owner, const uint64_t& pic_id, const uint64_t& dst_album_id);
+
+    // 修改个人相册的名字
+    ACTION renamealbum(const name& owner, const uint64_t& album_id, const string& new_name);
+
+    // 修改图片的名字和描述
+    ACTION modifypicnd(const name& owner, const uint64_t& pic_id, const string& new_name, const string& new_detail);
+
+    // 修改公共相册的名字
+    ACTION rnpubalbum(const uint64_t& pub_album_id, const string& new_name);
+
     // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
     ACTION clearalldata();
 
@@ -69,6 +90,7 @@ private:
         string       name;
         asset        album_pay;
         string       cover_thumb_pic_ipfs_sum;
+        uint32_t     create_time;
 
         uint64_t primary_key() const { return album_id; }
         uint64_t by_owner()    const { return owner.value; }

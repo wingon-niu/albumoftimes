@@ -11,3 +11,5 @@
 #define  IPFS_SUM_LEN     46         // IPFS上的文件的HASH的长度(单位：字节)
 
 #define  ALBUM_DEFAULT_COVER_PIC_IPFS_HASH  "0XAAAAAAAAAA"  // 相册默认封面图片的 ipfs hash
+
+#define  REGULATOR_ACCOUNT_NAME  "niuzzzzzzzzz"_n

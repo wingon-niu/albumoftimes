@@ -90,6 +90,7 @@ ACTION albumoftimes::createalbum(const name& owner, const string& name)
         album.name                     = name;
         album.album_pay                = PAY_FOR_ALBUM;
         album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+        album.create_time              = current_time_point().sec_since_epoch();
     });
 }
 
@@ -240,6 +241,41 @@ ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& album_id)
     eosio::check(has_pic_in_album == false, "album is not empty");
 
     _albums.erase(itr_album);
+}
+
+// 监管删除违规图片
+ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
+{
+}
+
+// 将图片加入某个公共相册
+ACTION albumoftimes::joinpubalbum(const name& owner, const uint64_t& pic_id, const uint64_t& pub_album_id)
+{
+}
+
+// 将图片移出所属公共相册
+ACTION albumoftimes::outpubalbum(const name& owner, const uint64_t& pic_id)
+{
+}
+
+// 将图片移动到另一个相册（图片可以在个人相册之间移动）
+ACTION albumoftimes::movetoalbum(const name& owner, const uint64_t& pic_id, const uint64_t& dst_album_id)
+{
+}
+
+// 修改个人相册的名字
+ACTION albumoftimes::renamealbum(const name& owner, const uint64_t& album_id, const string& new_name)
+{
+}
+
+// 修改图片的名字和描述
+ACTION albumoftimes::modifypicnd(const name& owner, const uint64_t& pic_id, const string& new_name, const string& new_detail)
+{
+}
+
+// 修改公共相册的名字
+ACTION albumoftimes::rnpubalbum(const uint64_t& pub_album_id, const string& new_name)
+{
 }
 
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
