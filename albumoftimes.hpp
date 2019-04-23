@@ -80,6 +80,19 @@ public:
     ACTION clearalldata();
 
 private:
+
+    // 将个人相册的图片数量+1
+    void add_private_album_pic_num(const uint64_t& private_album_id);
+
+    // 将个人相册的图片数量-1
+    void sub_private_album_pic_num(const uint64_t& private_album_id);
+
+    // 将公共相册的图片数量+1
+    void add_public_album_pic_num(const uint64_t& public_album_id);
+
+    // 将公共相册的图片数量-1
+    void sub_public_album_pic_num(const uint64_t& public_album_id);
+
     TABLE st_account {
         name         owner;
         asset        quantity;

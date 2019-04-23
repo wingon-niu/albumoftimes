@@ -193,6 +193,8 @@ ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, cons
         pic.upvote_num               = 0;
         pic.upload_time              = current_time_point().sec_since_epoch();
     });
+
+    add_private_album_pic_num(album_id);
 }
 
 // 修改图片的名字和描述
@@ -236,8 +238,9 @@ ACTION albumoftimes::movetoalbum(const name& owner, const uint64_t& pic_id, cons
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
     eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
 
-    auto itr_album = _albums.find( dst_album_id );
-    eosio::check(itr_album != _albums.end(), "unknown dst album id");
+    auto itr_dst_album = _albums.find( dst_album_id );
+    eosio::check(itr_dst_album != _albums.end(), "unknown dst album id");
+    eosio::check(itr_dst_album->owner == owner, "dst album is not belong to this owner");
 
     uint64_t old_album_id = itr_pic->album_id;
     if ( old_album_id == dst_album_id ) {
@@ -247,6 +250,9 @@ ACTION albumoftimes::movetoalbum(const name& owner, const uint64_t& pic_id, cons
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
         pic.album_id = dst_album_id;
     });
+
+    sub_private_album_pic_num(old_album_id);
+    add_private_album_pic_num(dst_album_id);
 
     // TODO: 如果这个图片是它以前所属相册的封面，则需要更新它以前所属相册的封面为系统默认封面。
     if ( old_album_id > 0 ) {
@@ -274,6 +280,11 @@ ACTION albumoftimes::joinpubalbum(const name& owner, const uint64_t& pic_id, con
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
         pic.public_album_id = pub_album_id;
     });
+    
+    add_public_album_pic_num(pub_album_id);
+    if ( old_pub_album_id > 0 ) {
+        sub_public_album_pic_num(old_pub_album_id);
+    }
 
     // TODO: 如果这个图片是它以前所属公共相册的封面，则需要更新它以前所属公共相册的封面。
     if ( old_pub_album_id > 0 ) {
@@ -303,6 +314,8 @@ ACTION albumoftimes::outpubalbum(const name& owner, const uint64_t& pic_id)
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
         pic.public_album_id = 0;
     });
+    
+    sub_public_album_pic_num(old_pub_album_id);
 
     // TODO: 如果这个图片是它以前所属公共相册的封面，则需要更新它以前所属公共相册的封面。
     if ( old_pub_album_id > 0 ) {
@@ -373,12 +386,20 @@ ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
     auto itr_pic = _pics.find( pic_id );
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
     eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
+        
+    uint64_t private_album_id = itr_pic->album_id;
+    uint64_t public_album_id  = itr_pic->public_album_id;
 
     // TODO: 如果这个图片是所属个人的某个相册的封面，则需要将这个相册的封面改回系统默认封面
 
     //
 
     _pics.erase(itr_pic);
+    
+    sub_private_album_pic_num(private_album_id);
+    if ( public_album_id > 0 ) {
+        sub_public_album_pic_num(public_album_id);
+    }
 
     // TODO: 如果这个图片是所属公共相册的封面，则需要更新这个公共相册的封面，由新的排序最前的图片当封面。
 
@@ -398,11 +419,19 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
         return;
     }
 
+    uint64_t private_album_id = itr_pic->album_id;
+    uint64_t public_album_id  = itr_pic->public_album_id;
+
     // TODO: 如果这个图片是所属个人的某个相册的封面，则需要将这个相册的封面改回系统默认封面
 
     //
 
     _pics.erase(itr_pic);
+    
+    sub_private_album_pic_num(private_album_id);
+    if ( public_album_id > 0 ) {
+        sub_public_album_pic_num(public_album_id);
+    }
 
     // TODO: 如果这个图片是所属公共相册的封面，则需要更新这个公共相册的封面，由新的排序最前的图片当封面。
 
@@ -428,6 +457,50 @@ ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& album_id)
     eosio::check(has_pic_in_album == false, "album is not empty");
 
     _albums.erase(itr_album);
+}
+
+// 将个人相册的图片数量+1
+void albumoftimes::add_private_album_pic_num(const uint64_t& private_album_id)
+{
+    auto itr_private_album = _albums.find( private_album_id );
+    eosio::check(itr_private_album != _albums.end(), "unknown private album id");
+
+    _albums.modify( itr_private_album, _self, [&]( auto& private_album ) {
+        private_album.pic_num += 1;
+    });
+}
+
+// 将个人相册的图片数量-1
+void albumoftimes::sub_private_album_pic_num(const uint64_t& private_album_id)
+{
+    auto itr_private_album = _albums.find( private_album_id );
+    eosio::check(itr_private_album != _albums.end(), "unknown private album id");
+
+    _albums.modify( itr_private_album, _self, [&]( auto& private_album ) {
+        private_album.pic_num -= 1;
+    });
+}
+
+// 将公共相册的图片数量+1
+void albumoftimes::add_public_album_pic_num(const uint64_t& public_album_id)
+{
+    auto itr_public_album = _pub_albums.find( public_album_id );
+    eosio::check(itr_public_album != _pub_albums.end(), "unknown public album id");
+
+    _pub_albums.modify( itr_public_album, _self, [&]( auto& public_album ) {
+        public_album.pic_num += 1;
+    });
+}
+
+// 将公共相册的图片数量-1
+void albumoftimes::sub_public_album_pic_num(const uint64_t& public_album_id)
+{
+    auto itr_public_album = _pub_albums.find( public_album_id );
+    eosio::check(itr_public_album != _pub_albums.end(), "unknown public album id");
+
+    _pub_albums.modify( itr_public_album, _self, [&]( auto& public_album ) {
+        public_album.pic_num -= 1;
+    });
 }
 
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
