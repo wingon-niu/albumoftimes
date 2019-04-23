@@ -124,11 +124,16 @@ private:
         uint64_t by_owner()              const { return owner.value; }
         uint64_t by_album_id()           const { return album_id; }
         uint64_t by_pub_album_sort_fee() const {
-            int64_t i = sort_fee.amount;
-            if (i<0) { i *= -1; }
-            uint64_t ui = (uint64_t)i;
+            int64_t fee = sort_fee.amount;
+            if ( fee < 0 ) { fee *= -1; }
+            uint64_t ui64_0x32_fee = (uint64_t)fee;
+            uint32_t ui32_0x32 = 0;
+            uint32_t ui32_1x32 = ~ui32_0x32;
+            uint64_t ui64_0x32_1x32 = (uint64_t)ui32_1x32;
+            uint64_t ui64_1x32_0x32 = ui64_0x32_1x32<<32;
+            uint64_t ui64_1x32_fee  = ui64_1x32_0x32 + ui64_0x32_fee;
             uint64_t pai = public_album_id;
-            return ( (pai<<32) + (~ui) ); 
+            return ( (pai<<32) + (~ui64_1x32_fee) ); 
         }
     };
     typedef eosio::multi_index<

@@ -58,8 +58,11 @@ ACTION albumoftimes::withdraw( const name to, const asset& quantity )
         eosio::check( acnt.quantity >= quantity, "insufficient balance" );
         acnt.quantity -= quantity;
     });
-    
-    // TODO: 如果余额为0，则删除这条记录
+
+    // 如果余额为0，则删除这条记录
+    if ( itr->quantity.amount == 0 ) {
+        _accounts.erase(itr);
+    }
 
     action(
         permission_level{ _self, "active"_n },
@@ -116,7 +119,10 @@ ACTION albumoftimes::createalbum(const name& owner, const string& name)
         acnt.quantity -= PAY_FOR_ALBUM;
     });
     
-    // TODO: 如果余额为0，则删除这条记录
+    // 如果余额为0，则删除这条记录
+    if ( itr->quantity.amount == 0 ) {
+        _accounts.erase(itr);
+    }
 
     _albums.emplace(_self, [&](auto& album){
         album.owner                    = owner;
@@ -167,7 +173,10 @@ ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, cons
         acnt.quantity -= PAY_FOR_PIC;
     });
 
-    // TODO: 如果余额为0，则删除这条记录
+    // 如果余额为0，则删除这条记录
+    if ( itr_acnt->quantity.amount == 0 ) {
+        _accounts.erase(itr_acnt);
+    }
 
     _pics.emplace(_self, [&](auto& pic){
         pic.owner                    = owner;
@@ -328,7 +337,10 @@ ACTION albumoftimes::paysortfee(const name& owner, const uint64_t& pic_id, const
         acnt.quantity -= sortfee;
     });
 
-    // TODO: 如果余额为0，则删除这条记录
+    // 如果余额为0，则删除这条记录
+    if ( itr_acnt->quantity.amount == 0 ) {
+        _accounts.erase(itr_acnt);
+    }
 
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
         pic.sort_fee += sortfee;
@@ -406,6 +418,7 @@ ACTION albumoftimes::deletealbum(const name& owner, const uint64_t& album_id)
     eosio::check(itr_album != _albums.end(), "unknown album id");
     eosio::check(itr_album->owner == owner, "this album is not belong to this owner");
 
+    // 检查相册中是否有图片（可以直接根据相册中的图片数量进行判断，下面的代码是在给相册增加图片数量属性以前写的，就保留这样吧，不改了。）
     auto album_index = _pics.get_index<name("byalbumid")>();
     auto itr = album_index.lower_bound(album_id);
     bool has_pic_in_album = false;
