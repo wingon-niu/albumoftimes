@@ -96,7 +96,7 @@ private:
     // 将个人相册的封面设置为系统默认封面
     void set_private_album_default_cover(const uint64_t& private_album_id);
 
-    // 公共相册重新选择封面，将排序最前的图片设置为封面
+    // 公共相册重新选择封面，将排序最前并且支付过排序费用的图片设置为封面，如果没有这样的图片，则设置为系统默认封面
     void update_public_album_cover(const uint64_t& public_album_id);
 
     TABLE st_account {

@@ -225,7 +225,7 @@ ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const
     eosio::check(itr_album->owner == owner, "this album is not belong to this owner");
 
     _albums.modify( itr_album, _self, [&]( auto& album ) {
-        album.cover_thumb_pic_ipfs_sum = cover_thumb_pic_ipfs_sum;
+        album.cover_thumb_pic_ipfs_sum = cover_thumb_pic_ipfs_sum;      //////  ~~~程序猿同学可以自由设置封面~~~
     });
 }
 
@@ -254,9 +254,13 @@ ACTION albumoftimes::movetoalbum(const name& owner, const uint64_t& pic_id, cons
     sub_private_album_pic_num(old_album_id);
     add_private_album_pic_num(dst_album_id);
 
-    // TODO: 如果这个图片是它以前所属相册的封面，则需要更新它以前所属相册的封面为系统默认封面。
-    if ( old_album_id > 0 ) {
-        //
+    // 如果这个图片是它以前所属相册的封面，则需要更新它以前所属相册的封面为系统默认封面。
+    auto itr_old_album = _albums.find( old_album_id );
+    eosio::check(itr_old_album != _albums.end(), "unknown old album id");
+    eosio::check(itr_old_album->owner == owner, "old album is not belong to this owner");
+
+    if ( itr_old_album->cover_thumb_pic_ipfs_sum == itr_pic->thumb_ipfs_sum ) {
+        set_private_album_default_cover(old_album_id);
     }
 }
 
@@ -286,14 +290,14 @@ ACTION albumoftimes::joinpubalbum(const name& owner, const uint64_t& pic_id, con
         sub_public_album_pic_num(old_pub_album_id);
     }
 
-    // TODO: 如果这个图片是它以前所属公共相册的封面，则需要更新它以前所属公共相册的封面。
-    if ( old_pub_album_id > 0 ) {
-        //
+    // 如果这个图片以前曾经支付过在公共相册中的排序费用，则它可能成为新的所属公共相册的封面。
+    if ( itr_pic->sort_fee.amount > 0 ) {
+        update_public_album_cover(pub_album_id);
     }
 
-    // TODO: 如果这个图片以前曾经支付过在公共相册中的排序费用，则它可能成为新的所属公共相册的封面。
-    if ( itr_pic->sort_fee.amount > 0 ) {
-        //
+    // 这个图片可能是它以前所属公共相册的封面，更新它以前所属公共相册的封面。
+    if ( old_pub_album_id > 0 && itr_pic->sort_fee.amount > 0 ) {
+        update_public_album_cover(old_pub_album_id);
     }
 }
 
@@ -514,7 +518,7 @@ void albumoftimes::set_private_album_default_cover(const uint64_t& private_album
     });
 }
 
-// 公共相册重新选择封面，将排序最前的图片设置为封面
+// 公共相册重新选择封面，将排序最前并且支付过排序费用的图片设置为封面，如果没有这样的图片，则设置为系统默认封面
 void albumoftimes::update_public_album_cover(const uint64_t& public_album_id)
 {
     auto itr_public_album = _pub_albums.find( public_album_id );
@@ -523,7 +527,7 @@ void albumoftimes::update_public_album_cover(const uint64_t& public_album_id)
     uint64_t ui64 = public_album_id;
     auto pub_album_fee_index = _pics.get_index<name("bypubsortfee")>();
     auto itr = pub_album_fee_index.lower_bound(ui64<<32);
-    if (itr != pub_album_fee_index.end() && itr->public_album_id == public_album_id) {
+    if (itr != pub_album_fee_index.end() && itr->public_album_id == public_album_id && itr->sort_fee.amount > 0 ) {
         _pub_albums.modify( itr_public_album, _self, [&]( auto& public_album ) {
             public_album.cover_thumb_pic_ipfs_sum = itr->thumb_ipfs_sum;
         });
