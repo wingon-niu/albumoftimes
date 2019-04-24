@@ -99,6 +99,8 @@ private:
     // 公共相册重新选择封面，将排序最前并且支付过排序费用的图片设置为封面，如果没有这样的图片，则设置为系统默认封面
     void update_public_album_cover(const uint64_t& public_album_id);
 
+    ////////////////////////////////////////////////////////////////////////////////
+
     TABLE st_account {
         name         owner;
         asset        quantity;
@@ -106,6 +108,23 @@ private:
         uint64_t primary_key() const { return owner.value; }
     };
     typedef eosio::multi_index<"accounts"_n, st_account> tb_accounts;
+
+    TABLE st_pub_album {
+        name         owner;
+        uint64_t     pub_album_id;
+        string       name_cn;
+        string       name_en;
+        string       cover_thumb_pic_ipfs_sum;
+        uint32_t     create_time;
+        uint64_t     pic_num;
+
+        uint64_t primary_key() const { return pub_album_id; }
+        uint64_t by_owner()    const { return owner.value; }
+    };
+    typedef eosio::multi_index<
+        "pubalbums"_n, st_pub_album,
+        indexed_by< "byowner"_n, const_mem_fun<st_pub_album, uint64_t, &st_pub_album::by_owner> >
+    > tb_pub_albums;
 
     TABLE st_album {
         name         owner;
@@ -161,23 +180,6 @@ private:
         indexed_by< "byalbumid"_n,    const_mem_fun<st_pic, uint64_t, &st_pic::by_album_id> >,
         indexed_by< "bypubsortfee"_n, const_mem_fun<st_pic, uint64_t, &st_pic::by_pub_album_sort_fee> >
     > tb_pics;
-
-    TABLE st_pub_album {
-        name         owner;
-        uint64_t     pub_album_id;
-        string       name_cn;
-        string       name_en;
-        string       cover_thumb_pic_ipfs_sum;
-        uint32_t     create_time;
-        uint64_t     pic_num;
-
-        uint64_t primary_key() const { return pub_album_id; }
-        uint64_t by_owner()    const { return owner.value; }
-    };
-    typedef eosio::multi_index<
-        "pubalbums"_n, st_pub_album,
-        indexed_by< "byowner"_n, const_mem_fun<st_pub_album, uint64_t, &st_pub_album::by_owner> >
-    > tb_pub_albums;
 
     tb_accounts     _accounts;
     tb_pub_albums   _pub_albums;

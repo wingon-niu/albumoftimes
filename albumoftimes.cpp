@@ -573,6 +573,17 @@ ACTION albumoftimes::clearalldata()
     }
 
     keysForDeletion.clear();
+    for (auto& item : _pub_albums) {
+        keysForDeletion.push_back(item.pub_album_id);
+    }
+    for (uint64_t key : keysForDeletion) {
+        auto itr = _pub_albums.find(key);
+        if (itr != _pub_albums.end()) {
+            _pub_albums.erase(itr);
+        }
+    }
+
+    keysForDeletion.clear();
     for (auto& item : _albums) {
         keysForDeletion.push_back(item.album_id);
     }
