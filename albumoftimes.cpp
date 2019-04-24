@@ -318,12 +318,12 @@ ACTION albumoftimes::outpubalbum(const name& owner, const uint64_t& pic_id)
     _pics.modify( itr_pic, _self, [&]( auto& pic ) {
         pic.public_album_id = 0;
     });
-    
+
     sub_public_album_pic_num(old_pub_album_id);
 
-    // TODO: 如果这个图片是它以前所属公共相册的封面，则需要更新它以前所属公共相册的封面。
-    if ( old_pub_album_id > 0 ) {
-        //
+    // 这个图片可能是它以前所属公共相册的封面，更新它以前所属公共相册的封面。
+    if ( itr_pic->sort_fee.amount > 0 ) {
+        update_public_album_cover(old_pub_album_id);
     }
 }
 
@@ -363,9 +363,10 @@ ACTION albumoftimes::paysortfee(const name& owner, const uint64_t& pic_id, const
         pic.sort_fee += sortfee;
     });
 
-    // TODO: 如果这个图片在一个公共相册里面，则可能需要更新这个公共相册的封面，由排序最前的图片当封面。
-
-    //
+    // 如果这个图片在一个公共相册里面，则可能成为这个公共相册的封面。
+    if ( itr_pic->public_album_id > 0 ) {
+        update_public_album_cover(itr_pic->public_album_id);
+    }
 }
 
 // 为图片点赞
@@ -394,9 +395,14 @@ ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
     uint64_t private_album_id = itr_pic->album_id;
     uint64_t public_album_id  = itr_pic->public_album_id;
 
-    // TODO: 如果这个图片是所属个人的某个相册的封面，则需要将这个相册的封面改回系统默认封面
+    // 如果这个图片是所属个人相册的封面，则需要将这个相册的封面改回系统默认封面。
+    auto itr_private_album = _albums.find( private_album_id );
+    eosio::check(itr_private_album != _albums.end(), "unknown private album id");
+    eosio::check(itr_private_album->owner == owner, "private album is not belong to this owner");
 
-    //
+    if ( itr_private_album->cover_thumb_pic_ipfs_sum == itr_pic->thumb_ipfs_sum ) {
+        set_private_album_default_cover(private_album_id);
+    }
 
     _pics.erase(itr_pic);
     
@@ -405,9 +411,10 @@ ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
         sub_public_album_pic_num(public_album_id);
     }
 
-    // TODO: 如果这个图片是所属公共相册的封面，则需要更新这个公共相册的封面，由新的排序最前的图片当封面。
-
-    //
+    // 这个图片可能是它所属公共相册的封面，更新它所属公共相册的封面。
+    if ( public_album_id > 0 && itr_pic->sort_fee.amount > 0 ) {
+        update_public_album_cover(public_album_id);
+    }
 }
 
 // 监管删除违规图片
