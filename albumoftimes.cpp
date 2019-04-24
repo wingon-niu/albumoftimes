@@ -503,6 +503,37 @@ void albumoftimes::sub_public_album_pic_num(const uint64_t& public_album_id)
     });
 }
 
+// 将个人相册的封面设置为系统默认封面
+void albumoftimes::set_private_album_default_cover(const uint64_t& private_album_id)
+{
+    auto itr_private_album = _albums.find( private_album_id );
+    eosio::check(itr_private_album != _albums.end(), "unknown private album id");
+
+    _albums.modify( itr_private_album, _self, [&]( auto& private_album ) {
+        private_album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+    });
+}
+
+// 公共相册重新选择封面，将排序最前的图片设置为封面
+void albumoftimes::update_public_album_cover(const uint64_t& public_album_id)
+{
+    auto itr_public_album = _pub_albums.find( public_album_id );
+    eosio::check(itr_public_album != _pub_albums.end(), "unknown public album id");
+
+    uint64_t ui64 = public_album_id;
+    auto pub_album_fee_index = _pics.get_index<name("bypubsortfee")>();
+    auto itr = pub_album_fee_index.lower_bound(ui64<<32);
+    if (itr != pub_album_fee_index.end() && itr->public_album_id == public_album_id) {
+        _pub_albums.modify( itr_public_album, _self, [&]( auto& public_album ) {
+            public_album.cover_thumb_pic_ipfs_sum = itr->thumb_ipfs_sum;
+        });
+    } else {
+        _pub_albums.modify( itr_public_album, _self, [&]( auto& public_album ) {
+            public_album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+        });
+    }
+}
+
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
 ACTION albumoftimes::clearalldata()
 {
