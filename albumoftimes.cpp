@@ -391,7 +391,7 @@ ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
     auto itr_pic = _pics.find( pic_id );
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
     eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
-        
+
     uint64_t private_album_id = itr_pic->album_id;
     uint64_t public_album_id  = itr_pic->public_album_id;
 
@@ -404,15 +404,17 @@ ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
         set_private_album_default_cover(private_album_id);
     }
 
+    asset sortfee = itr_pic->sort_fee;
+
     _pics.erase(itr_pic);
-    
+
     sub_private_album_pic_num(private_album_id);
     if ( public_album_id > 0 ) {
         sub_public_album_pic_num(public_album_id);
     }
 
     // 这个图片可能是它所属公共相册的封面，更新它所属公共相册的封面。
-    if ( public_album_id > 0 && itr_pic->sort_fee.amount > 0 ) {
+    if ( public_album_id > 0 && sortfee.amount > 0 ) {
         update_public_album_cover(public_album_id);
     }
 }
@@ -424,7 +426,7 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
 
     auto itr_pic = _pics.find( pic_id );
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
-        
+
     // 检查是否超出可以删除的时间期限
     if ( current_time_point().sec_since_epoch() - itr_pic->upload_time > REGULATOR_DELETE_TIME_LIMIT_SECS ) {
         return;
@@ -433,20 +435,27 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
     uint64_t private_album_id = itr_pic->album_id;
     uint64_t public_album_id  = itr_pic->public_album_id;
 
-    // TODO: 如果这个图片是所属个人的某个相册的封面，则需要将这个相册的封面改回系统默认封面
+    // 如果这个图片是所属个人相册的封面，则需要将这个相册的封面改回系统默认封面。
+    auto itr_private_album = _albums.find( private_album_id );
+    eosio::check(itr_private_album != _albums.end(), "unknown private album id");
 
-    //
+    if ( itr_private_album->cover_thumb_pic_ipfs_sum == itr_pic->thumb_ipfs_sum ) {
+        set_private_album_default_cover(private_album_id);
+    }
+
+    asset sortfee = itr_pic->sort_fee;
 
     _pics.erase(itr_pic);
-    
+
     sub_private_album_pic_num(private_album_id);
     if ( public_album_id > 0 ) {
         sub_public_album_pic_num(public_album_id);
     }
 
-    // TODO: 如果这个图片是所属公共相册的封面，则需要更新这个公共相册的封面，由新的排序最前的图片当封面。
-
-    //
+    // 这个图片可能是它所属公共相册的封面，更新它所属公共相册的封面。
+    if ( public_album_id > 0 && sortfee.amount > 0 ) {
+        update_public_album_cover(public_album_id);
+    }
 }
 
 // 删除个人相册，如果相册中有图片，则不能删除，只能删除空相册
