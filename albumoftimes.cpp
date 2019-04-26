@@ -27,7 +27,8 @@ ACTION albumoftimes::transfer(const name& from, const name& to, const asset& qua
     auto itr = _accounts.find(from.value);
     if( itr == _accounts.end() ) {
        itr = _accounts.emplace(_self, [&](auto& acnt){
-          acnt.owner = from;
+          acnt.owner    = from;
+          acnt.quantity = ZERO_FEE;
        });
     }
 
