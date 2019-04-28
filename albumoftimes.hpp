@@ -76,6 +76,12 @@ public:
     // 删除个人相册，如果相册中有图片，则不能删除，只能删除空相册
     ACTION deletealbum(const name& owner, const uint64_t& album_id);
 
+    // 系统初始化时使用：删掉 pub_album_id = 0 的公共相册
+    ACTION rmpubalbumfr();
+
+    // 系统初始化时使用：删掉     album_id = 0 的个人相册
+    ACTION rmprialbumfr();
+
     // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
     ACTION clearalldata();
 

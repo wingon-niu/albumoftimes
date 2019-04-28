@@ -555,6 +555,28 @@ void albumoftimes::update_public_album_cover(const uint64_t& public_album_id)
     }
 }
 
+// 系统初始化时使用：删掉 pub_album_id = 0 的公共相册
+ACTION albumoftimes::rmpubalbumfr()
+{
+    require_auth( _self );
+
+    auto itr_pub_album = _pub_albums.find( 0 );
+    eosio::check(itr_pub_album != _pub_albums.end(), "there is no record of pub_album_id = 0");
+
+    _pub_albums.erase(itr_pub_album);
+}
+
+// 系统初始化时使用：删掉     album_id = 0 的个人相册
+ACTION albumoftimes::rmprialbumfr()
+{
+    require_auth( _self );
+
+    auto itr_album = _albums.find( 0 );
+    eosio::check(itr_album != _albums.end(), "there is no record of album_id = 0");
+
+    _albums.erase(itr_album);
+}
+
 // 清除 multi_index 中的所有数据，测试时使用，上线时去掉
 ACTION albumoftimes::clearalldata()
 {
