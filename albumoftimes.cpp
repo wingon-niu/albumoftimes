@@ -429,9 +429,7 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
 
     // 检查是否超出可以删除的时间期限
-    if ( current_time_point().sec_since_epoch() - itr_pic->upload_time > REGULATOR_DELETE_TIME_LIMIT_SECS ) {
-        return;
-    }
+    eosio::check( current_time_point().sec_since_epoch() - itr_pic->upload_time <= REGULATOR_DELETE_TIME_LIMIT_SECS, "time limit exceeded" );
 
     uint64_t private_album_id = itr_pic->album_id;
     uint64_t public_album_id  = itr_pic->public_album_id;
