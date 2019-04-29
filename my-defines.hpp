@@ -13,4 +13,4 @@
 #define  ALBUM_DEFAULT_COVER_PIC_IPFS_HASH  "0X1234567890ABCDEF" // 相册默认封面图片的 ipfs hash
 
 #define  REGULATOR_ACCOUNT_NAME            name("niuzzzzzzzzz")  // 监管账户，有权限在一个时间范围内，删除违规的图片
-#define  REGULATOR_DELETE_TIME_LIMIT_SECS  60                    // 时间范围（单位：秒），1年=31536000秒
+#define  REGULATOR_DELETE_TIME_LIMIT_SECS  31536000              // 时间范围（单位：秒），1年=31536000秒
