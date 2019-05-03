@@ -80,13 +80,13 @@ ACTION albumoftimes::makepubalbum(const string& name_cn, const string& name_en)
     eosio::check( name_en.length() <= NAME_MAX_LEN, "name_en is too long" );
 
     _pub_albums.emplace(_self, [&](auto& pub_album){
-        pub_album.owner                    = _self;
-        pub_album.pub_album_id             = _pub_albums.available_primary_key();
-        pub_album.name_cn                  = name_cn;
-        pub_album.name_en                  = name_en;
-        pub_album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
-        pub_album.create_time              = current_time_point().sec_since_epoch();
-        pub_album.pic_num                  = 0;
+        pub_album.owner                     = _self;
+        pub_album.pub_album_id              = _pub_albums.available_primary_key();
+        pub_album.name_cn                   = name_cn;
+        pub_album.name_en                   = name_en;
+        pub_album.cover_thumb_pic_ipfs_hash = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+        pub_album.create_time               = current_time_point().sec_since_epoch();
+        pub_album.pic_num                   = 0;
     });
 }
 
@@ -126,13 +126,13 @@ ACTION albumoftimes::createalbum(const name& owner, const string& name)
     }
 
     _albums.emplace(_self, [&](auto& album){
-        album.owner                    = owner;
-        album.album_id                 = _albums.available_primary_key();
-        album.name                     = name;
-        album.album_pay                = PAY_FOR_ALBUM;
-        album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
-        album.create_time              = current_time_point().sec_since_epoch();
-        album.pic_num                  = 0;
+        album.owner                     = owner;
+        album.album_id                  = _albums.available_primary_key();
+        album.name                      = name;
+        album.album_pay                 = PAY_FOR_ALBUM;
+        album.cover_thumb_pic_ipfs_hash = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+        album.create_time               = current_time_point().sec_since_epoch();
+        album.pic_num                   = 0;
     });
 }
 
@@ -153,14 +153,14 @@ ACTION albumoftimes::renamealbum(const name& owner, const uint64_t& album_id, co
 
 // 上传图片
 ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, const string& name, const string& detail,
-                               const string& md5_sum, const string& ipfs_sum, const string& thumb_ipfs_sum)
+                               const string& sha256_sum, const string& ipfs_hash, const string& thumb_ipfs_hash)
 {
     require_auth( owner );
-    eosio::check( name.length()           <= NAME_MAX_LEN,   "name is too long" );
-    eosio::check( detail.length()         <= DETAIL_MAX_LEN, "detail is too long" );
-    eosio::check( md5_sum.length()        == MD5_SUM_LEN,    "wrong md5_sum" );
-    eosio::check( ipfs_sum.length()       == IPFS_SUM_LEN,   "wrong ipfs_sum" );
-    eosio::check( thumb_ipfs_sum.length() == IPFS_SUM_LEN,   "wrong thumb_ipfs_sum" );
+    eosio::check( name.length()            <= NAME_MAX_LEN,   "name is too long" );
+    eosio::check( detail.length()          <= DETAIL_MAX_LEN, "detail is too long" );
+    eosio::check( sha256_sum.length()      == SHA256_SUM_LEN, "wrong sha256_sum" );
+    eosio::check( ipfs_hash.length()       == IPFS_HASH_LEN,  "wrong ipfs_hash" );
+    eosio::check( thumb_ipfs_hash.length() == IPFS_HASH_LEN,  "wrong thumb_ipfs_hash" );
 
     auto itr_album = _albums.find( album_id );
     eosio::check(itr_album != _albums.end(), "unknown album_id");
@@ -185,9 +185,9 @@ ACTION albumoftimes::uploadpic(const name& owner, const uint64_t& album_id, cons
         pic.pic_id                   = _pics.available_primary_key();
         pic.name                     = name;
         pic.detail                   = detail;
-        pic.md5_sum                  = md5_sum;
-        pic.ipfs_sum                 = ipfs_sum;
-        pic.thumb_ipfs_sum           = thumb_ipfs_sum;
+        pic.sha256_sum               = sha256_sum;
+        pic.ipfs_hash                = ipfs_hash;
+        pic.thumb_ipfs_hash          = thumb_ipfs_hash;
         pic.pic_pay                  = PAY_FOR_PIC;
         pic.public_album_id          = 0;
         pic.sort_fee                 = ZERO_FEE;
@@ -216,17 +216,17 @@ ACTION albumoftimes::modifypicnd(const name& owner, const uint64_t& pic_id, cons
 }
 
 // 设置个人相册的封面图片
-ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_sum)
+ACTION albumoftimes::setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_hash)
 {
     require_auth( owner );
-    eosio::check( cover_thumb_pic_ipfs_sum.length() == IPFS_SUM_LEN, "wrong cover_thumb_pic_ipfs_sum" );
+    eosio::check( cover_thumb_pic_ipfs_hash.length() == IPFS_HASH_LEN, "wrong cover_thumb_pic_ipfs_hash" );
 
     auto itr_album = _albums.find( album_id );
     eosio::check(itr_album != _albums.end(), "unknown album_id");
     eosio::check(itr_album->owner == owner, "this album is not belong to this owner");
 
     _albums.modify( itr_album, _self, [&]( auto& album ) {
-        album.cover_thumb_pic_ipfs_sum = cover_thumb_pic_ipfs_sum;      //////  ~~~程序猿同学可以自由设置封面~~~
+        album.cover_thumb_pic_ipfs_hash = cover_thumb_pic_ipfs_hash;      //////  ~~~程序猿同学可以自由设置封面~~~
     });
 }
 
@@ -260,7 +260,7 @@ ACTION albumoftimes::movetoalbum(const name& owner, const uint64_t& pic_id, cons
     eosio::check(itr_old_album != _albums.end(), "unknown old album id");
     eosio::check(itr_old_album->owner == owner, "old album is not belong to this owner");
 
-    if ( itr_old_album->cover_thumb_pic_ipfs_sum == itr_pic->thumb_ipfs_sum ) {
+    if ( itr_old_album->cover_thumb_pic_ipfs_hash == itr_pic->thumb_ipfs_hash ) {
         set_private_album_default_cover(old_album_id);
     }
 }
@@ -401,7 +401,7 @@ ACTION albumoftimes::deletepic(const name& owner, const uint64_t& pic_id)
     eosio::check(itr_private_album != _albums.end(), "unknown private album id");
     eosio::check(itr_private_album->owner == owner, "private album is not belong to this owner");
 
-    if ( itr_private_album->cover_thumb_pic_ipfs_sum == itr_pic->thumb_ipfs_sum ) {
+    if ( itr_private_album->cover_thumb_pic_ipfs_hash == itr_pic->thumb_ipfs_hash ) {
         set_private_album_default_cover(private_album_id);
     }
 
@@ -438,7 +438,7 @@ ACTION albumoftimes::rmillegalpic(const uint64_t& pic_id)
     auto itr_private_album = _albums.find( private_album_id );
     eosio::check(itr_private_album != _albums.end(), "unknown private album id");
 
-    if ( itr_private_album->cover_thumb_pic_ipfs_sum == itr_pic->thumb_ipfs_sum ) {
+    if ( itr_private_album->cover_thumb_pic_ipfs_hash == itr_pic->thumb_ipfs_hash ) {
         set_private_album_default_cover(private_album_id);
     }
 
@@ -529,7 +529,7 @@ void albumoftimes::set_private_album_default_cover(const uint64_t& private_album
     eosio::check(itr_private_album != _albums.end(), "unknown private album id");
 
     _albums.modify( itr_private_album, _self, [&]( auto& private_album ) {
-        private_album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+        private_album.cover_thumb_pic_ipfs_hash = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
     });
 }
 
@@ -544,11 +544,11 @@ void albumoftimes::update_public_album_cover(const uint64_t& public_album_id)
     auto itr = pub_album_fee_index.lower_bound(ui64<<32);
     if (itr != pub_album_fee_index.end() && itr->public_album_id == public_album_id && itr->sort_fee.amount > 0 ) {
         _pub_albums.modify( itr_public_album, _self, [&]( auto& public_album ) {
-            public_album.cover_thumb_pic_ipfs_sum = itr->thumb_ipfs_sum;
+            public_album.cover_thumb_pic_ipfs_hash = itr->thumb_ipfs_hash;
         });
     } else {
         _pub_albums.modify( itr_public_album, _self, [&]( auto& public_album ) {
-            public_album.cover_thumb_pic_ipfs_sum = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
+            public_album.cover_thumb_pic_ipfs_hash = ALBUM_DEFAULT_COVER_PIC_IPFS_HASH;
         });
     }
 }

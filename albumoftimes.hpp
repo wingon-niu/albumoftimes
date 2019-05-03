@@ -12,7 +12,7 @@
 using namespace eosio;
 using std::string;
 
-// 时光相册
+// 时空相册
 
 CONTRACT albumoftimes : public eosio::contract {
 public:
@@ -44,13 +44,13 @@ public:
 
     // 上传图片
     ACTION uploadpic(const name& owner, const uint64_t& album_id, const string& name, const string& detail,
-                     const string& md5_sum, const string& ipfs_sum, const string& thumb_ipfs_sum);
+                     const string& sha256_sum, const string& ipfs_hash, const string& thumb_ipfs_hash);
 
     // 修改图片的名字和描述
     ACTION modifypicnd(const name& owner, const uint64_t& pic_id, const string& new_name, const string& new_detail);
 
     // 设置个人相册的封面图片
-    ACTION setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_sum);
+    ACTION setcover(const name& owner, const uint64_t& album_id, const string& cover_thumb_pic_ipfs_hash);
 
     // 将图片移动到另一个相册（图片可以在个人相册之间移动）
     ACTION movetoalbum(const name& owner, const uint64_t& pic_id, const uint64_t& dst_album_id);
@@ -120,7 +120,7 @@ private:
         uint64_t     pub_album_id;
         string       name_cn;
         string       name_en;
-        string       cover_thumb_pic_ipfs_sum;
+        string       cover_thumb_pic_ipfs_hash;
         uint32_t     create_time;
         uint64_t     pic_num;
 
@@ -137,7 +137,7 @@ private:
         uint64_t     album_id;
         string       name;
         asset        album_pay;
-        string       cover_thumb_pic_ipfs_sum;
+        string       cover_thumb_pic_ipfs_hash;
         uint32_t     create_time;
         uint64_t     pic_num;
 
@@ -155,9 +155,9 @@ private:
         uint64_t     pic_id;
         string       name;
         string       detail;
-        string       md5_sum;
-        string       ipfs_sum;
-        string       thumb_ipfs_sum;
+        string       sha256_sum;
+        string       ipfs_hash;
+        string       thumb_ipfs_hash;
         asset        pic_pay;
         uint64_t     public_album_id;
         asset        sort_fee;
