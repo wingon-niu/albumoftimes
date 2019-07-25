@@ -15,15 +15,20 @@ ACTION albumoftimes::transfer(const name& from, const name& to, const asset& qua
     if ("albumoftimes deposit" != memo) {
         return;
     }
-    if ( !quantity.is_valid() || !quantity.is_amount_within_range() ) {
-        return;
-    }
-    if ( !quantity.symbol.is_valid() || quantity.symbol != MAIN_SYMBOL ) {
-        return;
-    }
-    if (quantity.amount <= 0) {
-        return;
-    }
+    //if ( !quantity.is_valid() || !quantity.is_amount_within_range() ) {
+    //    return;
+    //}
+    //if ( !quantity.symbol.is_valid() || quantity.symbol != MAIN_SYMBOL ) {
+    //    return;
+    //}
+    //if (quantity.amount <= 0) {
+    //    return;
+    //}
+    eosio::check(quantity.symbol.is_valid(),        "invalid quantity inputed");
+    eosio::check(quantity.symbol == MAIN_SYMBOL,    "invalid quantity inputed");
+    eosio::check(quantity.is_valid(),               "invalid quantity inputed");
+    eosio::check(quantity.is_amount_within_range(), "invalid quantity inputed");
+    eosio::check(quantity.amount > 0,               "invalid quantity inputed");
 
     auto itr = _accounts.find(from.value);
     if( itr == _accounts.end() ) {
@@ -43,15 +48,20 @@ ACTION albumoftimes::withdraw( const name to, const asset& quantity )
 {
     require_auth( to );
 
-    if ( !quantity.is_valid() || !quantity.is_amount_within_range() ) {
-        return;
-    }
-    if ( !quantity.symbol.is_valid() || quantity.symbol != MAIN_SYMBOL ) {
-        return;
-    }
-    if (quantity.amount <= 0) {
-        return;
-    }
+    //if ( !quantity.is_valid() || !quantity.is_amount_within_range() ) {
+    //    return;
+    //}
+    //if ( !quantity.symbol.is_valid() || quantity.symbol != MAIN_SYMBOL ) {
+    //    return;
+    //}
+    //if (quantity.amount <= 0) {
+    //    return;
+    //}
+    eosio::check(quantity.symbol.is_valid(),        "invalid quantity inputed");
+    eosio::check(quantity.symbol == MAIN_SYMBOL,    "invalid quantity inputed");
+    eosio::check(quantity.is_valid(),               "invalid quantity inputed");
+    eosio::check(quantity.is_amount_within_range(), "invalid quantity inputed");
+    eosio::check(quantity.amount > 0,               "invalid quantity inputed");
 
     auto itr = _accounts.find( to.value );
     eosio::check(itr != _accounts.end(), "unknown account");
@@ -338,15 +348,20 @@ ACTION albumoftimes::paysortfee(const name& owner, const uint64_t& pic_id, const
     eosio::check(itr_pic != _pics.end(), "unknown pic id");
     eosio::check(itr_pic->owner == owner, "this pic is not belong to this owner");
 
-    if ( !sortfee.is_valid() || !sortfee.is_amount_within_range() ) {
-        return;
-    }
-    if ( !sortfee.symbol.is_valid() || sortfee.symbol != MAIN_SYMBOL ) {
-        return;
-    }
-    if (sortfee.amount <= 0) {
-        return;
-    }
+    //if ( !sortfee.is_valid() || !sortfee.is_amount_within_range() ) {
+    //    return;
+    //}
+    //if ( !sortfee.symbol.is_valid() || sortfee.symbol != MAIN_SYMBOL ) {
+    //    return;
+    //}
+    //if (sortfee.amount <= 0) {
+    //    return;
+    //}
+    eosio::check(sortfee.symbol.is_valid(),        "invalid quantity inputed");
+    eosio::check(sortfee.symbol == MAIN_SYMBOL,    "invalid quantity inputed");
+    eosio::check(sortfee.is_valid(),               "invalid quantity inputed");
+    eosio::check(sortfee.is_amount_within_range(), "invalid quantity inputed");
+    eosio::check(sortfee.amount > 0,               "invalid quantity inputed");
 
     auto itr_acnt = _accounts.find( owner.value );
     eosio::check(itr_acnt != _accounts.end(), "unknown account");
